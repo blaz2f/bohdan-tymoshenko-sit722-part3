@@ -1,25 +1,19 @@
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends
 from sqlalchemy.orm import Session
-from .database import SessionLocal, engine
-from . import crud, models, schemas
+import crud, schemas
+from database import engine, get_db
+from typing import List
+from models import Base
 
-models.Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-
-# Dependency to get the database session
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @app.post("/books/", response_model=schemas.Book)
 def create_book(book: schemas.BookCreate, db: Session = Depends(get_db)):
     return crud.create_book(db=db, book=book)
 
-@app.get("/books/", response_model=list[schemas.Book])
+@app.get("/books/", response_model=List[schemas.Book])
 def read_books(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     books = crud.get_books(db, skip=skip, limit=limit)
     return books
